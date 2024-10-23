@@ -1,33 +1,27 @@
+import argparse
 import random
 from turtle import mainloop, Screen
 
+from buildplanner.parser_util import MOVE_STRATEGIES, ALIGNMENT_STRATEGIES, BONDS
 from buildplanner.render import Renderer
-from buildplanner.robot import Robot, OutsideInMoveStrategy, CenterAlignmentStrategy
-from buildplanner.wall import create_wall, StretcherBond
+from buildplanner.robot import (
+    Robot,
+    MoveStrategy,
+)
+from buildplanner.wall import create_wall, Bond
 
 WALL_LENGTH = 2300
 WALL_HEIGHT = 2000
 ROBOT_BUILD_ENVELOPE_LENGTH = 800
 ROBOT_BUILD_ENVELOPE_HEIGHT = 1300
 
-## most efficient for the stretcher and cross bond wall
-BOND = StretcherBond()
-# BOND = CrossBond()
-ALIGNMENT_STRATEGY = CenterAlignmentStrategy()
-MOVE_STRATEGY = OutsideInMoveStrategy(ALIGNMENT_STRATEGY)
 
-## most efficient for the flemish bond wall
-# BOND = FlemishBond()
-# ALIGNMENT_STRATEGY = RightAlignmentStrategy()
-# MOVE_STRATEGY = OutsideInMoveStrategy(ALIGNMENT_STRATEGY)
-
-
-def main():
-    wall = create_wall(WALL_LENGTH, WALL_HEIGHT, BOND)
+def main(bond: Bond, move_strategy: MoveStrategy):
+    wall = create_wall(WALL_LENGTH, WALL_HEIGHT, bond)
     robot = Robot(
         ROBOT_BUILD_ENVELOPE_LENGTH,
         ROBOT_BUILD_ENVELOPE_HEIGHT,
-        MOVE_STRATEGY,
+        move_strategy,
     )
 
     screen = Screen()
@@ -54,5 +48,30 @@ def main():
     mainloop()
 
 
+def parse_args() -> (Bond, MoveStrategy):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-b", "--bond", choices=BONDS.keys(), default="stretcher")
+    parser.add_argument(
+        "-m",
+        "--move-strategy",
+        choices=MOVE_STRATEGIES.keys(),
+        default="outside_in",
+    )
+    parser.add_argument(
+        "-a",
+        "--alignment-strategy",
+        choices=ALIGNMENT_STRATEGIES.keys(),
+    )
+
+    args = parser.parse_args()
+    default_align = "right" if args.bond == "flemish" else "center"
+    return (
+        BONDS[args.bond](),
+        MOVE_STRATEGIES[args.move_strategy](
+            ALIGNMENT_STRATEGIES[args.alignment_strategy or default_align]()
+        ),
+    )
+
+
 if __name__ == "__main__":
-    main()
+    main(*parse_args())

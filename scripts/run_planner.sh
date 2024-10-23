@@ -3,4 +3,4 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 
 cd $SCRIPT_DIR/..
-uv run src/buildplanner/planner_main.py
+uv run src/buildplanner/planner_main.py "$@"

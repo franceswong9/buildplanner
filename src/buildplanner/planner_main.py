@@ -11,12 +11,14 @@ from buildplanner.robot import (
     Robot,
     DynamicSnakeMoveStrategy,
 )
-from buildplanner.wall import create_stretcher_wall
+from buildplanner.wall import create_wall, StretcherBond
 
 WALL_LENGTH = 2300
 WALL_HEIGHT = 2000
 ROBOT_BUILD_ENVELOPE_LENGTH = 800
 ROBOT_BUILD_ENVELOPE_HEIGHT = 1300
+
+BOND = StretcherBond()
 
 
 def try_all_move_strategies():
@@ -37,7 +39,7 @@ def try_all_move_strategies():
         alignment_strategies, move_strategies
     ):
         print("Trying ", alignment_strategy.__name__, move_strategy.__name__)
-        wall = create_stretcher_wall(WALL_LENGTH, WALL_HEIGHT)
+        wall = create_wall(WALL_LENGTH, WALL_HEIGHT, BOND)
         robot = Robot(
             ROBOT_BUILD_ENVELOPE_LENGTH,
             ROBOT_BUILD_ENVELOPE_HEIGHT,

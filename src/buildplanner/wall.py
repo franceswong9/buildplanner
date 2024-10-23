@@ -1,11 +1,13 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 
 from .util import Rectangle, Point
 
 FULL_BRICK_LENGTH = 210
 HALF_BRICK_LENGTH = 100
+THREE_QUARTER_BRICK_LENGTH = 155
+QUARTER_BRICK_LENGTH = 45
 BRICK_HEIGHT = 50
 BED_JOINT_THICKNESS = 12.5
 HEAD_JOINT_THICKNESS = 10
@@ -35,8 +37,18 @@ class Brick(Unit):
         return Brick(Rectangle(bottom_left_corner, FULL_BRICK_LENGTH, BRICK_HEIGHT))
 
     @staticmethod
+    def create_three_quarter_brick(bottom_left_corner: Point) -> Brick:
+        return Brick(
+            Rectangle(bottom_left_corner, THREE_QUARTER_BRICK_LENGTH, BRICK_HEIGHT)
+        )
+
+    @staticmethod
     def create_half_brick(bottom_left_corner: Point) -> Brick:
         return Brick(Rectangle(bottom_left_corner, HALF_BRICK_LENGTH, BRICK_HEIGHT))
+
+    @staticmethod
+    def create_quarter_brick(bottom_left_corner: Point) -> Brick:
+        return Brick(Rectangle(bottom_left_corner, QUARTER_BRICK_LENGTH, BRICK_HEIGHT))
 
 
 class HeadJoint(Unit):
@@ -83,18 +95,74 @@ class Wall:
         return None
 
 
-def _create_stretcher_course(index: int, length: float) -> Course:
+class Bond:
+    def next_brick_in_course(
+        self, units: List[Unit], index: int, point: Point, length: float
+    ) -> Brick:
+        raise NotImplementedError
+
+    @staticmethod
+    def is_first_brick(bricks: List[Unit]) -> bool:
+        return len(bricks) == 0
+
+    @staticmethod
+    def is_odd_course(index: int) -> bool:
+        return index % 2 == 1
+
+    @staticmethod
+    def is_full_brick_too_long(point: Point, length: float) -> bool:
+        return point.x + FULL_BRICK_LENGTH > length
+
+
+class StretcherBond(Bond):
+    def next_brick_in_course(
+        self, units: List[Unit], index: int, point: Point, length: float
+    ) -> Brick:
+        if (
+            self.is_first_brick(units) and self.is_odd_course(index)
+        ) or self.is_full_brick_too_long(point, length):
+            # assumes that we have a wall length that perfectly fits full & half bricks
+            return Brick.create_half_brick(point)
+        return Brick.create_full_brick(point)
+
+
+class CrossBond(Bond):
+    def next_brick_in_course(
+        self, units: List[Unit], index: int, point: Point, length: float
+    ) -> Brick:
+        if self.is_odd_course(index):
+            return Brick.create_half_brick(point)
+        if self.is_first_brick(units) or self.is_full_brick_too_long(point, length):
+            # assumes that we have a wall length that perfectly fits full & quarter bricks
+            return Brick.create_quarter_brick(point)
+        return Brick.create_full_brick(point)
+
+
+class FlemishBond(Bond):
+    def next_brick_in_course(
+        self, units: List[Unit], index: int, point: Point, length: float
+    ) -> Brick:
+        if self.is_first_brick(units):
+            if self.is_odd_course(index):
+                return Brick.create_three_quarter_brick(point)
+            return Brick.create_half_brick(point)
+        previous_brick_is_half = units[-2].box.length == HALF_BRICK_LENGTH
+        next_brick = (
+            Brick.create_full_brick(point)
+            if previous_brick_is_half
+            else Brick.create_half_brick(point)
+        )
+        if point.x + next_brick.box.length > length:
+            # assumes that we have a wall that will perfectly fit these bricks
+            next_brick = Brick.create_quarter_brick(point)
+        return next_brick
+
+
+def _create_course(index: int, length: float, bond: Bond) -> Course:
     units = []
     point = Point(0, index * COURSE_HEIGHT + BED_JOINT_THICKNESS)
     while point.x < length:
-        first_brick = len(units) == 0
-        odd_course = index % 2 == 1
-        # assumes that we have a wall length that perfectly fits any number of full bricks plus one half brick
-        last_brick = point.x + FULL_BRICK_LENGTH > length
-        if (first_brick and odd_course) or last_brick:
-            brick = Brick.create_half_brick(point)
-        else:
-            brick = Brick.create_full_brick(point)
+        brick = bond.next_brick_in_course(units, index, point, length)
         units.append(brick)
         point = point.plus_x(brick.box.length)
 
@@ -104,9 +172,9 @@ def _create_stretcher_course(index: int, length: float) -> Course:
     return Course(index * COURSE_HEIGHT, units)
 
 
-def create_stretcher_wall(length: float, height: float) -> Wall:
+def create_wall(length: float, height: float, bond: Bond) -> Wall:
     box = Rectangle(Point(0, 0), length, height)
     number_of_courses = int(height / COURSE_HEIGHT)
     return Wall(
-        box, [_create_stretcher_course(i, length) for i in range(number_of_courses)]
+        box, [_create_course(i, length, bond) for i in range(number_of_courses)]
     )

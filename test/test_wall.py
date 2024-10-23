@@ -3,11 +3,16 @@ from buildplanner.wall import (
     Brick,
     Course,
     Wall,
-    create_stretcher_wall,
+    create_wall,
     HeadJoint,
     HALF_BRICK_LENGTH,
     FULL_BRICK_LENGTH,
     HEAD_JOINT_THICKNESS,
+    StretcherBond,
+    CrossBond,
+    QUARTER_BRICK_LENGTH,
+    FlemishBond,
+    THREE_QUARTER_BRICK_LENGTH,
 )
 
 
@@ -19,10 +24,26 @@ def test_create_full_brick():
     assert not brick.is_built
 
 
+def test_create_three_quarter_brick():
+    brick = Brick.create_three_quarter_brick(Point(3, 4))
+    assert brick.box.bottom_left_corner == Point(3, 4)
+    assert brick.box.length == 155
+    assert brick.box.height == 50
+    assert not brick.is_built
+
+
 def test_create_half_brick():
     brick = Brick.create_half_brick(Point(1, 4))
     assert brick.box.bottom_left_corner == Point(1, 4)
     assert brick.box.length == 100
+    assert brick.box.height == 50
+    assert not brick.is_built
+
+
+def test_create_quarter_brick():
+    brick = Brick.create_quarter_brick(Point(1, 4))
+    assert brick.box.bottom_left_corner == Point(1, 4)
+    assert brick.box.length == 45
     assert brick.box.height == 50
     assert not brick.is_built
 
@@ -135,8 +156,49 @@ def test_wall_next_non_complete_course_when_finished():
     assert wall.next_non_complete_course() is None  # test it caches correct value
 
 
+def test_stretcher_bond_when_first_brick_on_even_course():
+    bond = StretcherBond()
+    brick = bond.next_brick_in_course([], 2, Point(0, 0), 2300)
+    assert brick.box.bottom_left_corner == Point(0, 0)
+    assert brick.box.length == FULL_BRICK_LENGTH
+
+
+def test_stretcher_bond_when_last_brick_on_even_course():
+    bond = StretcherBond()
+    brick = bond.next_brick_in_course(
+        [Brick.create_full_brick(Point(0, 0))], 0, Point(2200, 0), 2300
+    )
+    assert brick.box.bottom_left_corner == Point(2200, 0)
+    assert brick.box.length == HALF_BRICK_LENGTH
+
+
+def test_stretcher_bond_when_first_brick_on_odd_course():
+    bond = StretcherBond()
+    brick = bond.next_brick_in_course([], 3, Point(0, 0), 2300)
+    assert brick.box.bottom_left_corner == Point(0, 0)
+    assert brick.box.length == HALF_BRICK_LENGTH
+
+
+def test_stretcher_bond_when_last_brick_on_odd_course():
+    bond = StretcherBond()
+    brick = bond.next_brick_in_course(
+        [Brick.create_full_brick(Point(0, 0))], 1, Point(2090, 0), 2300
+    )
+    assert brick.box.bottom_left_corner == Point(2090, 0)
+    assert brick.box.length == FULL_BRICK_LENGTH
+
+
+def test_stretcher_bond_when_middle_brick():
+    bond = StretcherBond()
+    brick = bond.next_brick_in_course(
+        [Brick.create_full_brick(Point(0, 0))], 1, Point(300, 0), 2300
+    )
+    assert brick.box.bottom_left_corner == Point(300, 0)
+    assert brick.box.length == FULL_BRICK_LENGTH
+
+
 def test_create_stretcher_wall():
-    wall = create_stretcher_wall(2300, 2000)
+    wall = create_wall(2300, 2000, StretcherBond())
     assert len(wall.courses) == 32
     for i in range(32):
         units = wall.courses[i].units
@@ -148,3 +210,112 @@ def test_create_stretcher_wall():
                 assert unit.box.length == FULL_BRICK_LENGTH
             else:
                 assert unit.box.length == HEAD_JOINT_THICKNESS
+
+
+def test_cross_bond_when_first_brick_on_even_course():
+    bond = CrossBond()
+    brick = bond.next_brick_in_course([], 2, Point(0, 0), 2300)
+    assert brick.box.bottom_left_corner == Point(0, 0)
+    assert brick.box.length == QUARTER_BRICK_LENGTH
+
+
+def test_cross_bond_when_middle_brick_on_even_course():
+    bond = CrossBond()
+    brick = bond.next_brick_in_course(
+        [Brick.create_full_brick(Point(0, 0))], 0, Point(500, 0), 2300
+    )
+    assert brick.box.bottom_left_corner == Point(500, 0)
+    assert brick.box.length == FULL_BRICK_LENGTH
+
+
+def test_cross_bond_when_last_brick_on_even_course():
+    bond = CrossBond()
+    brick = bond.next_brick_in_course(
+        [Brick.create_full_brick(Point(0, 0))], 4, Point(2255, 0), 2300
+    )
+    assert brick.box.bottom_left_corner == Point(2255, 0)
+    assert brick.box.length == QUARTER_BRICK_LENGTH
+
+
+def test_cross_bond_when_first_brick_on_odd_course():
+    bond = CrossBond()
+    brick = bond.next_brick_in_course([], 1, Point(0, 0), 2300)
+    assert brick.box.bottom_left_corner == Point(0, 0)
+    assert brick.box.length == HALF_BRICK_LENGTH
+
+
+def test_cross_bond_when_middle_brick_on_odd_course():
+    bond = CrossBond()
+    brick = bond.next_brick_in_course(
+        [Brick.create_full_brick(Point(0, 0))], 3, Point(500, 0), 2300
+    )
+    assert brick.box.bottom_left_corner == Point(500, 0)
+    assert brick.box.length == HALF_BRICK_LENGTH
+
+
+def test_cross_bond_when_last_brick_on_odd_course():
+    bond = CrossBond()
+    brick = bond.next_brick_in_course(
+        [Brick.create_full_brick(Point(0, 0))], 5, Point(2200, 0), 2300
+    )
+    assert brick.box.bottom_left_corner == Point(2200, 0)
+    assert brick.box.length == HALF_BRICK_LENGTH
+
+
+def test_create_cross_wall():
+    wall = create_wall(2300, 2000, CrossBond())
+    assert len(wall.courses) == 32
+    for i in range(0, 32, 2):
+        units = wall.courses[i].units
+        assert len(units) == 23
+        assert units.pop(0).box.length == QUARTER_BRICK_LENGTH
+        last_brick = units.pop(-1)
+        assert last_brick.box.length == QUARTER_BRICK_LENGTH
+        assert last_brick.box.bottom_left_corner.x + QUARTER_BRICK_LENGTH == 2300
+        for j, unit in enumerate(units):
+            if j % 2 == 0:
+                assert unit.box.length == HEAD_JOINT_THICKNESS
+            else:
+                assert unit.box.length == FULL_BRICK_LENGTH
+    for i in range(1, 32, 2):
+        units = wall.courses[i].units
+        assert len(units) == 41
+        for j, unit in enumerate(units):
+            if j % 2 == 0:
+                assert unit.box.length == HALF_BRICK_LENGTH
+            else:
+                assert unit.box.length == HEAD_JOINT_THICKNESS
+        assert units[-1].box.bottom_left_corner.x + HALF_BRICK_LENGTH == 2300
+
+
+def test_create_flemish_wall():
+    wall = create_wall(2300, 2000, FlemishBond())
+    assert len(wall.courses) == 32
+    for i in range(0, 32, 2):
+        units = wall.courses[i].units
+        assert len(units) == 27
+        for j, unit in enumerate(units):
+            if j % 2 == 0:
+                if j % 4 == 0:
+                    assert unit.box.length == HALF_BRICK_LENGTH
+                else:
+                    assert unit.box.length == FULL_BRICK_LENGTH
+            else:
+                assert unit.box.length == HEAD_JOINT_THICKNESS
+        last_brick = units[-1]
+        assert last_brick.box.bottom_left_corner.x + last_brick.box.length == 2300
+    for i in range(1, 32, 2):
+        units = wall.courses[i].units
+        assert len(units) == 29
+        assert units.pop(0).box.length == THREE_QUARTER_BRICK_LENGTH
+        last_brick = units.pop(-1)
+        assert last_brick.box.length == QUARTER_BRICK_LENGTH
+        assert last_brick.box.bottom_left_corner.x + last_brick.box.length == 2300
+        for j, unit in enumerate(units):
+            if j % 2 == 0:
+                assert unit.box.length == HEAD_JOINT_THICKNESS
+            else:
+                if j % 4 == 1:
+                    assert unit.box.length == HALF_BRICK_LENGTH
+                else:
+                    assert unit.box.length == FULL_BRICK_LENGTH

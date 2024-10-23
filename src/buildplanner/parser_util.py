@@ -28,3 +28,10 @@ ALIGNMENT_STRATEGIES = {
     "center": CenterAlignmentStrategy,
     "random": RandomAlignmentStrategy,
 }
+
+
+def int_greater_than_0(val: str) -> int:
+    val = int(val)
+    if val < 1:
+        raise ValueError("Must be an int greater than 0")
+    return val

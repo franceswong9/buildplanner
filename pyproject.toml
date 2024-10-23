@@ -1,0 +1,13 @@
+[project]
+name = "buildplanner"
+version = "0.1.0"
+description = "A small interactive program to plan & visualise robotic masonry wall builds"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.3",
+    "ruff>=0.7.0",
+]

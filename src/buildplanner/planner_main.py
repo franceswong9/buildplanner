@@ -13,7 +13,7 @@ from buildplanner.robot import (
     Robot,
     DynamicSnakeMoveStrategy,
 )
-from buildplanner.wall import create_wall, Bond
+from buildplanner.wall import Bond, create_wall
 
 WALL_LENGTH = 2300
 WALL_HEIGHT = 2000

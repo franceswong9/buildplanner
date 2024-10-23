@@ -1,6 +1,6 @@
 from typing import Optional
 
-from .wall import Brick, Wall
+from .model import Brick, Wall
 from turtle import Turtle
 
 FONT_HEIGHT_ADJUSTMENT = 10

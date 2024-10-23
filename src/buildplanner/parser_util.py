@@ -8,12 +8,13 @@ from buildplanner.robot import (
     CenterAlignmentStrategy,
     RandomAlignmentStrategy,
 )
-from buildplanner.wall import StretcherBond, CrossBond, FlemishBond
+from buildplanner.wall import StretcherBond, CrossBond, FlemishBond, WildBond
 
 BONDS = {
     "stretcher": StretcherBond,
     "cross": CrossBond,
     "flemish": FlemishBond,
+    "wild": WildBond,
 }
 MOVE_STRATEGIES = {
     "left_to_right": LeftToRightMoveStrategy,

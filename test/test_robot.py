@@ -10,13 +10,12 @@ from buildplanner.robot import (
     DynamicSnakeMoveStrategy,
 )
 from buildplanner.util import Rectangle, Point
-from buildplanner.wall import (
-    create_wall,
+from buildplanner.model import (
     Brick,
     BED_JOINT_THICKNESS,
     COURSE_HEIGHT,
-    StretcherBond,
 )
+from buildplanner.wall import StretcherBond, create_wall
 
 
 def test_left_alignment_strategy():

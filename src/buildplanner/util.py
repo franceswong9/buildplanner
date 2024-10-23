@@ -37,7 +37,7 @@ class Rectangle:
         return self.bottom_left_corner.plus_x(self.length / 2).plus_y(self.height / 2)
 
     def bounds(self, other: Rectangle) -> bool:
-        return self._bounds_point(other.bottom_left_corner) and self._bounds_point(
+        return self.bounds_point(other.bottom_left_corner) and self.bounds_point(
             other.top_right_corner
         )
 
@@ -47,11 +47,20 @@ class Rectangle:
             or self.bottom_left_corner.x > other.bottom_right_corner.x
         )
 
-    def _bounds_point(self, point: Point) -> bool:
-        return self._bounds_x(point) and self._bounds_y(point)
+    def bounds_point(self, point: Point) -> bool:
+        return self.bounds_x(point.x) and self.bounds_y(point.y)
 
-    def _bounds_x(self, point: Point) -> bool:
-        return self.bottom_left_corner.x <= point.x <= self.bottom_right_corner.x
+    def bounds_x(self, x: float) -> bool:
+        return self.bottom_left_corner.x <= x <= self.bottom_right_corner.x
 
-    def _bounds_y(self, point: Point) -> bool:
-        return self.bottom_left_corner.y <= point.y <= self.top_left_corner.y
+    def bounds_y(self, y: float) -> bool:
+        return self.bottom_left_corner.y <= y <= self.top_left_corner.y
+
+    def slice_at_x(self, x: float) -> Rectangle:
+        if x - self.bottom_left_corner.x < 0:
+            raise ValueError("Cannot have negative length rectangle")
+        return Rectangle(
+            self.bottom_left_corner,
+            min(self.length, x - self.bottom_left_corner.x),
+            self.height,
+        )

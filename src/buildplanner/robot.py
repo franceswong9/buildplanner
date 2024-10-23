@@ -4,7 +4,7 @@ import random
 from typing import Optional, Iterable
 
 from .util import Rectangle, Point
-from .wall import Wall, Brick, Course, BED_JOINT_THICKNESS, Unit
+from .model import Wall, Brick, Course, BED_JOINT_THICKNESS, Unit
 
 
 class AlignmentStrategy:

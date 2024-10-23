@@ -97,7 +97,7 @@ class Wall:
 
 class Bond:
     def next_brick_in_course(
-        self, units: List[Unit], index: int, point: Point, length: float
+        self, course: List[Unit], course_idx: int, bottom_left_corner: Point, wall_length: float
     ) -> Brick:
         raise NotImplementedError
 
@@ -116,45 +116,45 @@ class Bond:
 
 class StretcherBond(Bond):
     def next_brick_in_course(
-        self, units: List[Unit], index: int, point: Point, length: float
+        self, course: List[Unit], course_idx: int, bottom_left_corner: Point, wall_length: float
     ) -> Brick:
         if (
-            self.is_first_brick(units) and self.is_odd_course(index)
-        ) or self.is_full_brick_too_long(point, length):
+                self.is_first_brick(course) and self.is_odd_course(course_idx)
+        ) or self.is_full_brick_too_long(bottom_left_corner, wall_length):
             # assumes that we have a wall length that perfectly fits full & half bricks
-            return Brick.create_half_brick(point)
-        return Brick.create_full_brick(point)
+            return Brick.create_half_brick(bottom_left_corner)
+        return Brick.create_full_brick(bottom_left_corner)
 
 
 class CrossBond(Bond):
     def next_brick_in_course(
-        self, units: List[Unit], index: int, point: Point, length: float
+        self, course: List[Unit], course_idx: int, bottom_left_corner: Point, wall_length: float
     ) -> Brick:
-        if self.is_odd_course(index):
-            return Brick.create_half_brick(point)
-        if self.is_first_brick(units) or self.is_full_brick_too_long(point, length):
+        if self.is_odd_course(course_idx):
+            return Brick.create_half_brick(bottom_left_corner)
+        if self.is_first_brick(course) or self.is_full_brick_too_long(bottom_left_corner, wall_length):
             # assumes that we have a wall length that perfectly fits full & quarter bricks
-            return Brick.create_quarter_brick(point)
-        return Brick.create_full_brick(point)
+            return Brick.create_quarter_brick(bottom_left_corner)
+        return Brick.create_full_brick(bottom_left_corner)
 
 
 class FlemishBond(Bond):
     def next_brick_in_course(
-        self, units: List[Unit], index: int, point: Point, length: float
+        self, course: List[Unit], course_idx: int, bottom_left_corner: Point, wall_length: float
     ) -> Brick:
-        if self.is_first_brick(units):
-            if self.is_odd_course(index):
-                return Brick.create_three_quarter_brick(point)
-            return Brick.create_half_brick(point)
-        previous_brick_is_half = units[-2].box.length == HALF_BRICK_LENGTH
+        if self.is_first_brick(course):
+            if self.is_odd_course(course_idx):
+                return Brick.create_three_quarter_brick(bottom_left_corner)
+            return Brick.create_half_brick(bottom_left_corner)
+        previous_brick_is_half = course[-2].box.length == HALF_BRICK_LENGTH
         next_brick = (
-            Brick.create_full_brick(point)
+            Brick.create_full_brick(bottom_left_corner)
             if previous_brick_is_half
-            else Brick.create_half_brick(point)
+            else Brick.create_half_brick(bottom_left_corner)
         )
-        if point.x + next_brick.box.length > length:
+        if bottom_left_corner.x + next_brick.box.length > wall_length:
             # assumes that we have a wall that will perfectly fit these bricks
-            next_brick = Brick.create_quarter_brick(point)
+            next_brick = Brick.create_quarter_brick(bottom_left_corner)
         return next_brick
 
 
